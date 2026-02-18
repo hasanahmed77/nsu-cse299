@@ -1,5 +1,6 @@
 import os
 import ssl
+import socket
 from urllib.parse import parse_qsl, urlparse, urlencode, urlunparse
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -19,6 +20,8 @@ if "sslmode=" in db_url:
 
 # Supabase requires SSL in production
 connect_args["ssl"] = ssl.create_default_context()
+# Render sometimes resolves IPv6; force IPv4 to avoid network unreachable
+connect_args["family"] = socket.AF_INET
 
 # Serverless environments should not keep open pools
 use_null_pool = os.getenv("VERCEL") == "1" or os.getenv("VERCEL_ENV") is not None
