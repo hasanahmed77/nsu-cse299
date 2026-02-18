@@ -57,12 +57,6 @@ async def get_movie(movie_id: int, db: AsyncSession = Depends(get_db)):
     return await _hydrate_movie(db, movie)
 
 
-@router.get("/{movie_id}/recommendations", response_model=list[MovieOut])
-async def movie_recommendations(movie_id: int, db: AsyncSession = Depends(get_db)):
-    movies = await recommend_for_movie(db, movie_id)
-    return [await _hydrate_movie(db, m) for m in movies]
-
-
 @router.get("/trending", response_model=list[MovieOut])
 async def trending(db: AsyncSession = Depends(get_db)):
     stmt = (
@@ -74,4 +68,10 @@ async def trending(db: AsyncSession = Depends(get_db)):
     )
     result = await db.execute(stmt)
     movies = result.scalars().all()
+    return [await _hydrate_movie(db, m) for m in movies]
+
+
+@router.get("/{movie_id}/recommendations", response_model=list[MovieOut])
+async def movie_recommendations(movie_id: int, db: AsyncSession = Depends(get_db)):
+    movies = await recommend_for_movie(db, movie_id)
     return [await _hydrate_movie(db, m) for m in movies]
