@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -20,7 +21,8 @@ app.include_router(auth.router, prefix=settings.api_v1_prefix)
 app.include_router(movies.router, prefix=settings.api_v1_prefix)
 app.include_router(history.router, prefix=settings.api_v1_prefix)
 
-app.mount("/media", StaticFiles(directory="media"), name="media")
+if os.path.isdir("media"):
+    app.mount("/media", StaticFiles(directory="media"), name="media")
 
 
 @app.get("/health")
