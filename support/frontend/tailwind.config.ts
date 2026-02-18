@@ -7,7 +7,7 @@ const config: Config = {
       colors: {
         "bg": "#0b0b0f",
         "panel": "#14141b",
-        "primary": "#e50914",
+        "primary": "#ffffff",
         "muted": "#a1a1aa"
       }
     },

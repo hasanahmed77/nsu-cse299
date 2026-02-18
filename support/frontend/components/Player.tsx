@@ -24,7 +24,7 @@ export default function Player({ src, subtitles }: { src: string; subtitles: { l
   }, [src]);
 
   return (
-    <div className="bg-black rounded-lg overflow-hidden">
+    <div className="bg-black rounded-lg overflow-hidden border border-white/10">
       <video ref={videoRef} controls className="w-full">
         {subtitles.map((s) => (
           <track key={s.url} label={s.label} kind="subtitles" srcLang={s.language} src={s.url} />

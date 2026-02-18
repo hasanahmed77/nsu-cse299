@@ -23,26 +23,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-panel p-6 rounded-lg">
-      <h1 className="text-2xl font-bold">Login</h1>
+    <div className="max-w-md mx-auto bg-zinc-950 border border-white/10 p-6 rounded-lg">
+      <h1 className="text-3xl font-display tracking-wider">Sign In</h1>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full bg-black/40 border border-white/10 rounded-md px-4 py-2"
+          className="w-full bg-black/60 border border-white/10 rounded-md px-4 py-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full bg-black/40 border border-white/10 rounded-md px-4 py-2"
+          className="w-full bg-black/60 border border-white/10 rounded-md px-4 py-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
         />
-        <button className="w-full bg-primary text-white py-2 rounded-md">Sign In</button>
+        <button className="w-full bg-primary text-black py-2 rounded-md font-semibold">Sign In</button>
       </form>
-      {message && <div className="text-sm text-muted mt-3">{message}</div>}
+      {message && <div className="text-sm text-zinc-400 mt-3">{message}</div>}
     </div>
   );
 }

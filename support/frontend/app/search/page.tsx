@@ -11,17 +11,17 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-panel p-4 rounded-lg">
+      <div className="bg-zinc-950 border border-white/10 p-4 rounded-lg">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search movies..."
-          className="w-full bg-black/40 border border-white/10 rounded-md px-4 py-2"
+          className="w-full bg-black/60 border border-white/10 rounded-md px-4 py-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
         />
       </div>
 
       {error && <div className="text-red-400">Failed to search.</div>}
-      {!query && <div className="text-muted">Type to search.</div>}
+      {!query && <div className="text-zinc-500">Type to search.</div>}
 
       {data && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
