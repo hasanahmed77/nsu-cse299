@@ -3,8 +3,15 @@
 import useSWR from "swr";
 import { api } from "../../lib/api";
 
+type HistoryItem = {
+  movie_id: number;
+  progress_seconds: number;
+  completed: boolean;
+};
+
 export default function HistoryPage() {
-  const { data, error } = useSWR("/api/v1/history", (url) => api(url));
+  const fetcher = (url: string) => api<HistoryItem[]>(url);
+  const { data, error } = useSWR<HistoryItem[]>("/api/v1/history", fetcher);
 
   if (error) return <div className="text-red-400">Failed to load history.</div>;
 

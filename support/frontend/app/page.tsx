@@ -4,11 +4,25 @@ import useSWR from "swr";
 import Row from "../components/Row";
 import { api } from "../lib/api";
 
-const fetcher = (url: string) => api(url);
+type Movie = {
+  id: number;
+  title: string;
+  description: string;
+  year?: number | null;
+  duration_minutes?: number | null;
+  maturity_rating?: string | null;
+  poster_url?: string | null;
+  backdrop_url?: string | null;
+  hls_master_url: string;
+  genres?: string[];
+  subtitles?: { label: string; language: string; url: string }[];
+};
+
+const fetcher: (url: string) => Promise<Movie[]> = (url) => api<Movie[]>(url);
 
 export default function Home() {
-  const { data: latest, error } = useSWR("/api/v1/movies?limit=18", fetcher);
-  const { data: trending } = useSWR("/api/v1/movies/trending", fetcher);
+  const { data: latest, error } = useSWR<Movie[]>("/api/v1/movies?limit=18", fetcher);
+  const { data: trending } = useSWR<Movie[]>("/api/v1/movies/trending", fetcher);
 
   if (error) {
     return <div className="text-red-400">Failed to load.</div>;

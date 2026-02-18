@@ -15,13 +15,13 @@ export default function Row({ title, movies }: RowProps) {
         <div className="flex gap-4 overflow-x-auto px-4 py-4 snap-x snap-mandatory">
           {movies.map((movie) => (
             <div key={movie.id} className="snap-start w-[160px] md:w-[200px]">
-              <MovieCard
-                id={movie.id}
-                title={movie.title}
-                posterUrl={movie.poster_url || movie.posterUrl}
-                year={movie.year}
-                maturityRating={movie.maturity_rating || movie.maturityRating}
-              />
+            <MovieCard
+              id={movie.id}
+              title={movie.title}
+              posterUrl={movie.poster_url}
+              year={movie.year}
+              maturityRating={movie.maturity_rating}
+            />
             </div>
           ))}
         </div>

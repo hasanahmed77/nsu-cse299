@@ -6,12 +6,32 @@ import Player from "../../../components/Player";
 import MovieCard from "../../../components/MovieCard";
 import { api } from "../../../lib/api";
 
+type Subtitle = { label: string; language: string; url: string };
+type Movie = {
+  id: number;
+  title: string;
+  description: string;
+  year?: number | null;
+  duration_minutes?: number | null;
+  maturity_rating?: string | null;
+  poster_url?: string | null;
+  backdrop_url?: string | null;
+  hls_master_url: string;
+  genres?: string[];
+  subtitles?: Subtitle[];
+};
+
 export default function MovieDetail() {
   const params = useParams();
   const id = params?.id as string;
 
-  const { data, error } = useSWR(id ? `/api/v1/movies/${id}` : null, (url) => api(url));
-  const { data: recs } = useSWR(id ? `/api/v1/movies/${id}/recommendations` : null, (url) => api(url));
+  const movieFetcher = (url: string) => api<Movie>(url);
+  const recsFetcher = (url: string) => api<Movie[]>(url);
+  const { data, error } = useSWR<Movie>(id ? `/api/v1/movies/${id}` : null, movieFetcher);
+  const { data: recs } = useSWR<Movie[]>(
+    id ? `/api/v1/movies/${id}/recommendations` : null,
+    recsFetcher
+  );
 
   if (error) return <div className="text-red-400">Failed to load movie.</div>;
   if (!data) return <div className="text-zinc-500">Loading...</div>;
@@ -20,11 +40,11 @@ export default function MovieDetail() {
     <div className="space-y-8">
       <div className="grid md:grid-cols-[2fr,1fr] gap-6">
         <div className="space-y-4">
-          <Player src={data.hls_master_url || data.hlsMasterUrl} subtitles={data.subtitles || []} />
+          <Player src={data.hls_master_url} subtitles={data.subtitles || []} />
           <div className="text-zinc-400 text-xs uppercase tracking-[0.3em]">Now Playing</div>
           <h1 className="text-3xl md:text-4xl font-display tracking-wider">{data.title}</h1>
           <div className="text-zinc-400 text-sm">
-            {data.year ?? "—"} • {data.duration_minutes ?? data.durationMinutes ?? "—"} min • {data.maturity_rating ?? data.maturityRating ?? "NR"}
+            {data.year ?? "—"} • {data.duration_minutes ?? "—"} min • {data.maturity_rating ?? "NR"}
           </div>
           <p className="text-sm text-zinc-300">{data.description}</p>
         </div>
@@ -48,9 +68,9 @@ export default function MovieDetail() {
                 key={movie.id}
                 id={movie.id}
                 title={movie.title}
-                posterUrl={movie.poster_url || movie.posterUrl}
+                posterUrl={movie.poster_url}
                 year={movie.year}
-                maturityRating={movie.maturity_rating || movie.maturityRating}
+                maturityRating={movie.maturity_rating}
               />
             ))}
           </div>

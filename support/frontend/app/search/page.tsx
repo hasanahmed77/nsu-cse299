@@ -5,9 +5,21 @@ import useSWR from "swr";
 import MovieCard from "../../components/MovieCard";
 import { api } from "../../lib/api";
 
+type Movie = {
+  id: number;
+  title: string;
+  year?: number | null;
+  poster_url?: string | null;
+  maturity_rating?: string | null;
+};
+
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-  const { data, error } = useSWR(query ? `/api/v1/movies?query=${encodeURIComponent(query)}` : null, (url) => api(url));
+  const fetcher = (url: string) => api<Movie[]>(url);
+  const { data, error } = useSWR<Movie[]>(
+    query ? `/api/v1/movies?query=${encodeURIComponent(query)}` : null,
+    fetcher
+  );
 
   return (
     <div className="space-y-6">
@@ -30,9 +42,9 @@ export default function SearchPage() {
               key={movie.id}
               id={movie.id}
               title={movie.title}
-              posterUrl={movie.poster_url || movie.posterUrl}
+              posterUrl={movie.poster_url}
               year={movie.year}
-              maturityRating={movie.maturity_rating || movie.maturityRating}
+              maturityRating={movie.maturity_rating}
             />
           ))}
         </div>
