@@ -1,7 +1,5 @@
 import os
-import ssl
-from urllib.parse import parse_qsl, urlparse, urlencode, urlunparse
-
+from urllib.parse import urlparse, parse_qsl, urlunparse, urlencode
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import sessionmaker
@@ -18,15 +16,16 @@ if "sslmode=" in db_url:
     db_url = urlunparse(parsed._replace(query=urlencode(query)))
 
 # Supabase requires SSL in production
-connect_args["ssl"] = ssl.create_default_context()
+connect_args["ssl"] = "require"
 
 # Serverless environments should not keep open pools
 use_null_pool = os.getenv("VERCEL") == "1" or os.getenv("VERCEL_ENV") is not None
-engine_kwargs = dict(pool_pre_ping=True, connect_args=connect_args)
-if use_null_pool:
-    engine_kwargs["poolclass"] = NullPool
-
-engine = create_async_engine(db_url, **engine_kwargs)
+engine = create_async_engine(
+    db_url,
+    pool_pre_ping=True,
+    connect_args=connect_args,
+    poolclass=NullPool if use_null_pool else None,
+)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
