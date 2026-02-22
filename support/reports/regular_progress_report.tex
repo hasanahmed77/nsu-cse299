@@ -1,0 +1,197 @@
+\documentclass[conference]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+
+\title{Regular Progress Report:\\Development and Deployment Status of the Streaming Platform}
+
+\author{
+\IEEEauthorblockN{Mustakim Ahmed Hasan}
+\IEEEauthorblockA{
+Department of Computer Science and Engineering\\
+North South University\\
+Email: mustakimahmedhasan@gmail.com
+}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report summarizes iterative progress on a full-stack movie streaming project, including implemented modules, resolved technical issues, deployment outcomes, and pending improvements. Work covered frontend development in Next.js, backend API implementation in FastAPI, cloud storage integration through Supabase, and cross-origin deployment debugging. Major effort during this period focused on resolving build-time TypeScript failures, cloud runtime errors, CORS behavior, and database connectivity issues. The current state is functionally deployable with remaining optimization and reliability tasks identified.
+\end{abstract}
+
+\begin{IEEEkeywords}
+progress report, FastAPI, Next.js, deployment, CORS, PostgreSQL, Supabase
+\end{IEEEkeywords}
+
+\section{Project Scope for Reporting Period}
+The reporting period covers implementation and stabilization of the following deliverables:
+\begin{itemize}
+\item User authentication and session management.
+\item Movie listing, search, details, trending, and recommendations.
+\item Watch-history read/update flow.
+\item HLS playback integration in frontend.
+\item Media migration to cloud object storage.
+\item Frontend and backend cloud deployment readiness.
+\end{itemize}
+
+\section{Planned vs. Completed Work}
+\begin{table}[h]
+\caption{Planned Tasks and Completion Status}
+\label{tab:planstatus}
+\centering
+\begin{tabular}{p{3.3cm} p{2.2cm} p{1.2cm}}
+\toprule
+\textbf{Task} & \textbf{Status} & \textbf{Completion} \\
+\midrule
+Backend API module setup & Completed & 100\% \\
+Auth endpoints and token flow & Completed & 100\% \\
+Movie APIs and schema output & Completed & 100\% \\
+History APIs and persistence & Completed & 100\% \\
+Frontend core pages and routes & Completed & 100\% \\
+HLS playback integration & Completed & 100\% \\
+Supabase storage integration & Completed & 100\% \\
+Frontend cloud deployment & Completed & 100\% \\
+Backend cloud deployment hardening & In Progress & 85\% \\
+Reliability tuning (CORS/retry behavior) & In Progress & 80\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Detailed Progress by Iteration}
+\subsection{Iteration 1: Core Implementation}
+\textbf{Completed}
+\begin{itemize}
+\item FastAPI application structure with route modules \texttt{/auth}, \texttt{/movies}, and \texttt{/history}.
+\item SQLAlchemy async integration and model-driven schema responses.
+\item Next.js application with pages for home, movie details, search, login/register, and history.
+\item Player component using HLS.js fallback for browser compatibility.
+\end{itemize}
+
+\textbf{Result}
+End-to-end local feature flow became available, but cloud deployment and build consistency required additional work.
+
+\subsection{Iteration 2: Frontend Build Stabilization}
+\textbf{Observed Issues}
+\begin{itemize}
+\item Repeated TypeScript compilation failures on cloud builds.
+\item SWR call signatures and data type assumptions produced strict-type errors.
+\item Mismatch between expected camelCase fields and backend snake\_case fields.
+\end{itemize}
+
+\textbf{Fixes Applied}
+\begin{itemize}
+\item Added explicit frontend types for API responses.
+\item Standardized usage to backend field names (\texttt{hls\_master\_url}, \texttt{duration\_minutes}, \texttt{maturity\_rating}).
+\item Updated SWR fetcher typing and conditional rendering guards.
+\end{itemize}
+
+\textbf{Result}
+Frontend production builds became consistent after type-level cleanup.
+
+\subsection{Iteration 3: Media and Backend Deployment}
+\textbf{Observed Issues}
+\begin{itemize}
+\item GitHub push rejected due to large tracked files (\texttt{node\_modules}, \texttt{.next}, media binaries).
+\item Initial backend deployment crashed from incorrect import/entry configuration.
+\item Runtime failures when static \texttt{media} folder did not exist in cloud container.
+\end{itemize}
+
+\textbf{Fixes Applied}
+\begin{itemize}
+\item Removed tracked build artifacts from history and excluded generated files.
+\item Updated backend entrypoint configuration and import structure.
+\item Added conditional static media mount only if folder exists.
+\item Migrated video sources to Supabase Storage and used public HLS URLs.
+\end{itemize}
+
+\textbf{Result}
+Deployment moved from static-local media dependency to cloud storage model.
+
+\subsection{Iteration 4: Connectivity and CORS Hardening}
+\textbf{Observed Issues}
+\begin{itemize}
+\item Intermittent \texttt{500} and \texttt{422} responses from backend.
+\item CORS errors from frontend origin despite successful later retries.
+\item Cloud DB connection errors involving SSL/network/pooler compatibility.
+\end{itemize}
+
+\textbf{Fixes Applied}
+\begin{itemize}
+\item Reordered ambiguous route declarations to avoid path conflicts.
+\item Hardened CORS origin parsing and normalization.
+\item Updated DB connection handling for asyncpg and cloud-hosted PostgreSQL constraints.
+\item Added environment-driven configuration for API base URL and CORS origins.
+\end{itemize}
+
+\textbf{Result}
+System reached operational state with remaining reliability tuning focused on request retries and environment consistency.
+
+\section{Current Functional Status}
+\begin{itemize}
+\item \textbf{Working:} registration, login, logout, movie listing, search, detail view, HLS playback, recommendations endpoint, watch history page and updates.
+\item \textbf{Working with caution:} cross-origin fetch behavior under transient backend errors.
+\item \textbf{Pending polish:} reduction of noisy retry patterns and stricter production observability.
+\end{itemize}
+
+\section{Blockers and Root Causes}
+\begin{table}[h]
+\caption{Major Blockers and Resolutions}
+\label{tab:blockers}
+\centering
+\begin{tabular}{p{2.2cm} p{2.0cm} p{2.9cm}}
+\toprule
+\textbf{Area} & \textbf{Symptom} & \textbf{Resolution} \\
+\midrule
+Repository hygiene & Push rejected by file-size limits & Removed tracked generated artifacts and tightened ignore policy. \\
+Frontend build & TypeScript failures in cloud build & Corrected SWR typing and aligned field contracts. \\
+Backend runtime & Import/static folder startup crashes & Fixed entrypoint packaging and conditional media mount. \\
+Cross-origin access & Intermittent CORS failures & Normalized CORS origin parsing and env formatting. \\
+Database cloud access & Async SSL/connectivity errors & Updated DB URL handling and cloud-compatible connection settings. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Evidence of Progress}
+Evidence collected during this period includes:
+\begin{itemize}
+\item Successful local frontend and backend startup with route-level access.
+\item Successful frontend production build after type corrections.
+\item Cloud media serving through Supabase bucket and folder structure.
+\item Deployed frontend and backend URLs tested with API calls and browser flows.
+\item Runtime logs used to trace and patch CORS/DB/path-resolution faults.
+\end{itemize}
+
+\section{Risk Register Update}
+\begin{itemize}
+\item \textbf{Risk:} Recurrent CORS failures during transient backend errors.\\
+\textbf{Mitigation:} lock exact allowed origins and verify preflight headers in deployment.
+\item \textbf{Risk:} Provider-specific DB SSL behavior.\\
+\textbf{Mitigation:} standardize pooler URL and deployment-specific connection args.
+\item \textbf{Risk:} Over-fetching from client retries.\\
+\textbf{Mitigation:} tune SWR retry and revalidation policy after backend stability confirmation.
+\end{itemize}
+
+\section{Plan for Next Reporting Period}
+\begin{enumerate}
+\item Finalize backend deployment profile and monitor error-free API windows.
+\item Tune frontend fetch retry strategy to reduce unnecessary repeated requests.
+\item Add API smoke tests for critical routes before each deployment.
+\item Prepare final demonstration script and verification checklist.
+\item Produce final project report and presentation assets.
+\end{enumerate}
+
+\section{Conclusion}
+Project execution has progressed from prototype implementation to cloud-deployed operation with most core requirements completed. The highest effort was spent on real-world integration problems rather than feature coding, especially deployment configuration, API typing consistency, and cross-origin reliability. The current system is functional and close to final submission quality, with remaining work focused on hardening and predictable operational behavior.
+
+\begin{thebibliography}{00}
+\bibitem{fastapi} FastAPI Documentation. [Online]. Available: \url{https://fastapi.tiangolo.com}
+\bibitem{nextjs} Next.js Documentation. [Online]. Available: \url{https://nextjs.org/docs}
+\bibitem{sqlalchemy} SQLAlchemy Documentation. [Online]. Available: \url{https://docs.sqlalchemy.org}
+\bibitem{supabase} Supabase Documentation. [Online]. Available: \url{https://supabase.com/docs}
+\bibitem{vercel} Vercel Documentation. [Online]. Available: \url{https://vercel.com/docs}
+\end{thebibliography}
+
+\end{document}
