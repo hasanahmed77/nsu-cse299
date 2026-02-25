@@ -1,4 +1,3 @@
-import json
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,16 +11,13 @@ app = FastAPI(title=settings.project_name)
 raw_origins = (settings.cors_origins or "").strip()
 origins: list[str] = []
 if raw_origins:
-    if raw_origins.startswith("["):
-        try:
-            origins = [str(o).strip() for o in json.loads(raw_origins)]
-        except json.JSONDecodeError:
-            origins = []
-    else:
-        origins = [o.strip() for o in raw_origins.split(",")]
+    origins = [o.strip() for o in raw_origins.split(",")]
 
 # normalize and drop empties
 origins = [o.rstrip("/") for o in origins if o]
+
+raw_origin_regex = os.getenv("CORS_ORIGIN_REGEX", "").strip()
+origin_regex = raw_origin_regex or r"^https://[a-zA-Z0-9-]+\.vercel\.app$"
 
 allow_credentials = True
 if "*" in origins:
@@ -32,6 +28,7 @@ if "*" in origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=origin_regex,
     allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
