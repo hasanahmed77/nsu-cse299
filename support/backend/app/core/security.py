@@ -1,23 +1,40 @@
 from datetime import datetime, timedelta
+import hashlib
 from typing import Any
 
+import bcrypt
 from jose import jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
-# bcrypt has a 72-byte input limit; bcrypt_sha256 safely pre-hashes long passwords.
-# Keep legacy bcrypt to verify existing accounts created before this change.
-pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 ALGORITHM = "HS256"
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    encoded_hash = hashed_password.encode("utf-8")
+    normalized = _normalize_password(plain_password)
+
+    # Current scheme: sha256(password) -> bcrypt
+    try:
+        if bcrypt.checkpw(normalized, encoded_hash):
+            return True
+    except ValueError:
+        return False
+
+    # Legacy compatibility: direct bcrypt(password)
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), encoded_hash)
+    except ValueError:
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(_normalize_password(password), bcrypt.gensalt()).decode("utf-8")
+
+
+def _normalize_password(password: str) -> bytes:
+    # Pre-hash avoids bcrypt's 72-byte input limit while preserving deterministic verify.
+    return hashlib.sha256(password.encode("utf-8")).hexdigest().encode("utf-8")
 
 
 def create_access_token(subject: str) -> str:
