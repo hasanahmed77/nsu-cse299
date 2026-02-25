@@ -9,6 +9,7 @@ class HistoryCreate(BaseModel):
 
 class HistoryOut(BaseModel):
     movie_id: int
+    movie_title: str | None = None
     progress_seconds: int
     completed: bool
 

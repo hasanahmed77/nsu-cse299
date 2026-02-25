@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +9,7 @@ from app.models.genre import Genre
 from app.models.movie import Movie
 from app.models.movie_genre import MovieGenre
 from app.models.subtitle import Subtitle
+from app.models.watch_history import WatchHistory
 from app.schemas.movie import MovieOut, SubtitleOut
 from app.services.recommendations import recommend_for_movie
 
@@ -48,6 +51,35 @@ async def list_movies(
     return [await _hydrate_movie(db, m) for m in movies]
 
 
+@router.get("/trending", response_model=list[MovieOut])
+async def trending(db: AsyncSession = Depends(get_db)):
+    stmt = (
+        select(Movie)
+        .join(WatchHistory, WatchHistory.movie_id == Movie.id)
+        .group_by(Movie.id)
+        .order_by(func.count(WatchHistory.id).desc(), Movie.created_at.desc())
+        .limit(10)
+    )
+    result = await db.execute(stmt)
+    movies = result.scalars().all()
+    return [await _hydrate_movie(db, m) for m in movies]
+
+
+@router.get("/latest", response_model=list[MovieOut])
+async def latest_releases(limit: int = 10, db: AsyncSession = Depends(get_db)):
+    current_year = datetime.utcnow().year
+    min_year = current_year - 1
+    stmt = (
+        select(Movie)
+        .where(Movie.year.is_not(None), Movie.year >= min_year)
+        .order_by(Movie.year.desc(), Movie.created_at.desc())
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    movies = result.scalars().all()
+    return [await _hydrate_movie(db, m) for m in movies]
+
+
 @router.get("/{movie_id}", response_model=MovieOut)
 async def get_movie(movie_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Movie).where(Movie.id == movie_id))
@@ -55,20 +87,6 @@ async def get_movie(movie_id: int, db: AsyncSession = Depends(get_db)):
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
     return await _hydrate_movie(db, movie)
-
-
-@router.get("/trending", response_model=list[MovieOut])
-async def trending(db: AsyncSession = Depends(get_db)):
-    stmt = (
-        select(Movie)
-        .join(MovieGenre, MovieGenre.movie_id == Movie.id, isouter=True)
-        .group_by(Movie.id)
-        .order_by(func.count(Movie.id).desc())
-        .limit(12)
-    )
-    result = await db.execute(stmt)
-    movies = result.scalars().all()
-    return [await _hydrate_movie(db, m) for m in movies]
 
 
 @router.get("/{movie_id}/recommendations", response_model=list[MovieOut])

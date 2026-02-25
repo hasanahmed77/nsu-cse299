@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,27 +29,42 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)) -> U
 
 
 @router.post("/login")
-async def login(payload: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
+async def login(
+    payload: LoginRequest,
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(select(User).where(User.email == payload.email))
     user = result.scalar_one_or_none()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     token = create_access_token(user.email)
+    origin = request.headers.get("origin", "")
+    is_local = origin.startswith("http://localhost") or request.url.scheme == "http"
+    cookie_secure = not is_local
+    cookie_samesite = "lax" if is_local else "none"
+
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=cookie_secure,
+        samesite=cookie_samesite,
         max_age=60 * 60 * 24 * 7,
+        path="/",
     )
     return {"access_token": token, "token_type": "bearer"}
 
 
 @router.post("/logout")
-async def logout(response: Response):
-    response.delete_cookie("access_token")
+async def logout(request: Request, response: Response):
+    origin = request.headers.get("origin", "")
+    is_local = origin.startswith("http://localhost") or request.url.scheme == "http"
+    cookie_secure = not is_local
+    cookie_samesite = "lax" if is_local else "none"
+    response.delete_cookie("access_token", path="/", secure=cookie_secure, samesite=cookie_samesite)
     return {"ok": True}
 
 
