@@ -1,5 +1,6 @@
 import os
-from urllib.parse import urlparse, parse_qsl, urlunparse, urlencode
+import ssl
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import sessionmaker
@@ -9,14 +10,29 @@ from app.core.config import settings
 connect_args = {}
 db_url = settings.database_url
 
-# asyncpg doesn't accept sslmode in the URL; use connect_args instead
-if "sslmode=" in db_url:
-    parsed = urlparse(db_url)
-    query = [(k, v) for k, v in parse_qsl(parsed.query) if k.lower() != "sslmode"]
-    db_url = urlunparse(parsed._replace(query=urlencode(query)))
+# Normalize DB URL for SQLAlchemy asyncpg.
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif db_url.startswith("postgresql://") and "+asyncpg" not in db_url:
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-# Supabase requires SSL in production
-connect_args["ssl"] = "require"
+parsed = urlparse(db_url)
+filtered_query = []
+for key, value in parse_qsl(parsed.query):
+    # These keys can break asyncpg when passed through SQLAlchemy.
+    if key.lower() in {"sslmode", "family"}:
+        continue
+    filtered_query.append((key, value))
+db_url = urlunparse(parsed._replace(query=urlencode(filtered_query)))
+
+# Supabase requires SSL, but local Python trust stores may fail certificate chain verification.
+# Keep SSL enabled and allow verification toggle via env.
+ssl_verify = os.getenv("DB_SSL_VERIFY", "false").strip().lower() in {"1", "true", "yes"}
+ssl_context = ssl.create_default_context()
+if not ssl_verify:
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+connect_args["ssl"] = ssl_context
 
 # Serverless environments should not keep open pools
 use_null_pool = os.getenv("VERCEL") == "1" or os.getenv("VERCEL_ENV") is not None
