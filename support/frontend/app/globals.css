@@ -4,16 +4,22 @@
 
 :root {
   color-scheme: dark;
+  --accent-secondary: #facc15;
+  --bg-deep: #0b0b0b;
+  --bg-soft: #141414;
+  --text-soft: #b3b3b3;
 }
 
 * {
   scrollbar-color: #2a2a2a transparent;
+  box-sizing: border-box;
 }
 
 body {
   font-family: var(--font-body), ui-sans-serif, system-ui;
-  background: radial-gradient(circle at top, #1b1b1f 0%, #0b0b0c 45%, #050505 100%);
-  color: #f5f5f7;
+  background: linear-gradient(180deg, #111 0%, #0b0b0b 35%, #090909 100%);
+  color: #fff;
+  min-height: 100vh;
 }
 
 .font-display {
@@ -21,7 +27,7 @@ body {
 }
 
 .hero-zoom {
-  animation: hero-zoom 22s ease-in-out infinite alternate;
+  animation: hero-zoom 26s ease-in-out infinite alternate;
   transform-origin: center;
 }
 
@@ -30,16 +36,56 @@ body {
   100% { transform: scale(1.06); }
 }
 
-.grain-overlay {
-  background-image:
-    repeating-radial-gradient(circle at 20% 20%, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px),
-    repeating-radial-gradient(circle at 80% 40%, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px);
-  mix-blend-mode: soft-light;
-  opacity: 0.35;
+.netflix-header {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(10, 10, 10, 0.72) 60%, rgba(10, 10, 10, 0) 100%);
 }
 
-.glass-panel {
-  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-  border: 1px solid rgba(255,255,255,0.12);
-  backdrop-filter: blur(18px);
+.netflix-logo {
+  color: #ffffff;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.row-scroller {
+  scrollbar-width: none;
+}
+
+.row-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.hero-shadow {
+  box-shadow: inset 0 -120px 120px rgba(0, 0, 0, 0.85);
+}
+
+.gmail-loader-track {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.gmail-loader-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 35%;
+  border-radius: 999px;
+  background: #fff;
+  animation: gmail-slide 1.15s ease-in-out infinite;
+}
+
+@keyframes gmail-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  60% {
+    transform: translateX(190%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
 }

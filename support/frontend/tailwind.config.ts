@@ -8,6 +8,7 @@ const config: Config = {
         "bg": "#0b0b0f",
         "panel": "#14141b",
         "primary": "#ffffff",
+        "secondary": "#facc15",
         "muted": "#a1a1aa"
       }
     },

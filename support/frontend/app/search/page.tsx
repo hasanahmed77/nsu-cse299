@@ -4,6 +4,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import MovieCard from "../../components/MovieCard";
 import { api } from "../../lib/api";
+import { SearchResultsSkeleton } from "../../components/Skeletons";
 
 type Movie = {
   id: number;
@@ -32,8 +33,9 @@ export default function SearchPage() {
         />
       </div>
 
-      {error && <div className="text-red-400">Failed to search.</div>}
+      {error && <div className="text-secondary">Failed to search.</div>}
       {!query && <div className="text-zinc-500">Type to search.</div>}
+      {query && !data && !error && <SearchResultsSkeleton />}
 
       {data && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
