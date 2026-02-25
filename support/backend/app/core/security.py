@@ -6,7 +6,9 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt has a 72-byte input limit; bcrypt_sha256 safely pre-hashes long passwords.
+# Keep legacy bcrypt to verify existing accounts created before this change.
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 ALGORITHM = "HS256"
 
 
