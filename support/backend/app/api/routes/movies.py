@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.db.session import get_db
 from app.models.genre import Genre
@@ -17,12 +18,24 @@ router = APIRouter(prefix="/movies", tags=["movies"])
 
 
 async def _hydrate_movie(db: AsyncSession, movie: Movie) -> MovieOut:
-    genres_result = await db.execute(
-        select(Genre.name).join(MovieGenre, MovieGenre.genre_id == Genre.id).where(
-            MovieGenre.movie_id == movie.id
+    genres: list[str] = []
+    subtitles: list[SubtitleOut] = []
+    try:
+        genres_result = await db.execute(
+            select(Genre.name).join(MovieGenre, MovieGenre.genre_id == Genre.id).where(
+                MovieGenre.movie_id == movie.id
+            )
         )
-    )
-    subtitles_result = await db.execute(select(Subtitle).where(Subtitle.movie_id == movie.id))
+        genres = list(genres_result.scalars())
+    except SQLAlchemyError:
+        genres = []
+
+    try:
+        subtitles_result = await db.execute(select(Subtitle).where(Subtitle.movie_id == movie.id))
+        subtitles = [SubtitleOut.model_validate(s) for s in subtitles_result.scalars()]
+    except SQLAlchemyError:
+        subtitles = []
+
     return MovieOut(
         id=movie.id,
         title=movie.title,
@@ -33,8 +46,8 @@ async def _hydrate_movie(db: AsyncSession, movie: Movie) -> MovieOut:
         poster_url=movie.poster_url,
         backdrop_url=movie.backdrop_url,
         hls_master_url=movie.hls_master_url,
-        genres=list(genres_result.scalars()),
-        subtitles=[SubtitleOut.model_validate(s) for s in subtitles_result.scalars()],
+        genres=genres,
+        subtitles=subtitles,
     )
 
 
@@ -53,15 +66,21 @@ async def list_movies(
 
 @router.get("/trending", response_model=list[MovieOut])
 async def trending(db: AsyncSession = Depends(get_db)):
-    stmt = (
-        select(Movie)
-        .join(WatchHistory, WatchHistory.movie_id == Movie.id)
-        .group_by(Movie.id)
-        .order_by(func.count(WatchHistory.id).desc(), Movie.created_at.desc())
-        .limit(10)
-    )
-    result = await db.execute(stmt)
-    movies = result.scalars().all()
+    try:
+        stmt = (
+            select(Movie)
+            .join(WatchHistory, WatchHistory.movie_id == Movie.id)
+            .group_by(Movie.id)
+            .order_by(func.count(WatchHistory.id).desc(), Movie.created_at.desc())
+            .limit(10)
+        )
+        result = await db.execute(stmt)
+        movies = result.scalars().all()
+    except SQLAlchemyError:
+        # Fallback keeps homepage functional if watch_history isn't ready in deployed DB.
+        fallback_stmt = select(Movie).order_by(Movie.created_at.desc()).limit(10)
+        fallback_result = await db.execute(fallback_stmt)
+        movies = fallback_result.scalars().all()
     return [await _hydrate_movie(db, m) for m in movies]
 
 

@@ -39,7 +39,7 @@ It simulates the architecture of modern streaming platforms, giving hands-on exp
 
 | Layer           | Technology                     |
 | --------------- | ------------------------------ |
-| Frontend        | Next.js, React, CSS            |
+| Frontend        | Next.js, Tailwind CSS          |
 | Backend         | FastAPI (Python), RESTful APIs |
-| Database        | MySQL (via MySQL Workbench)    |
+| Database        | PostgreSQL (Supabase)          |
 | Version Control | Git & GitHub                   |

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
@@ -16,12 +17,15 @@ router = APIRouter(prefix="/history", tags=["history"])
 async def list_history(
     user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(WatchHistory, Movie.title)
-        .join(Movie, Movie.id == WatchHistory.movie_id)
-        .where(WatchHistory.user_id == user.id)
-        .order_by(WatchHistory.updated_at.desc())
-    )
+    try:
+        result = await db.execute(
+            select(WatchHistory, Movie.title)
+            .join(Movie, Movie.id == WatchHistory.movie_id)
+            .where(WatchHistory.user_id == user.id)
+            .order_by(WatchHistory.updated_at.desc())
+        )
+    except SQLAlchemyError:
+        return []
     return [
         HistoryOut(
             movie_id=h.movie_id,
@@ -39,26 +43,34 @@ async def upsert_history(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(WatchHistory).where(
-            WatchHistory.user_id == user.id, WatchHistory.movie_id == payload.movie_id
+    try:
+        result = await db.execute(
+            select(WatchHistory).where(
+                WatchHistory.user_id == user.id, WatchHistory.movie_id == payload.movie_id
+            )
         )
-    )
-    history = result.scalar_one_or_none()
-    if history:
-        history.progress_seconds = payload.progress_seconds
-        history.completed = payload.completed
-    else:
-        history = WatchHistory(
-            user_id=user.id,
+        history = result.scalar_one_or_none()
+        if history:
+            history.progress_seconds = payload.progress_seconds
+            history.completed = payload.completed
+        else:
+            history = WatchHistory(
+                user_id=user.id,
+                movie_id=payload.movie_id,
+                progress_seconds=payload.progress_seconds,
+                completed=payload.completed,
+            )
+            db.add(history)
+        await db.commit()
+        title_result = await db.execute(select(Movie.title).where(Movie.id == history.movie_id))
+        movie_title = title_result.scalar_one_or_none()
+    except SQLAlchemyError:
+        return HistoryOut(
             movie_id=payload.movie_id,
+            movie_title=None,
             progress_seconds=payload.progress_seconds,
             completed=payload.completed,
         )
-        db.add(history)
-    await db.commit()
-    title_result = await db.execute(select(Movie.title).where(Movie.id == history.movie_id))
-    movie_title = title_result.scalar_one_or_none()
     return HistoryOut(
         movie_id=history.movie_id,
         movie_title=movie_title,
