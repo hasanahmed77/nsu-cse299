@@ -26,6 +26,8 @@ export default function SearchPage() {
     <div className="space-y-6">
       <div className="bg-zinc-950 border border-white/10 p-4 rounded-lg">
         <input
+          id="search-page-query"
+          name="query"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search movies..."

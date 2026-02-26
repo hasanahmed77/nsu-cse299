@@ -37,7 +37,10 @@ export default function RegisterPage() {
         <h1 className="text-3xl font-display tracking-wider">Create Account</h1>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <input
+            id="register-full-name"
+            name="full_name"
             type="text"
+            autoComplete="name"
             placeholder="Full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -45,7 +48,10 @@ export default function RegisterPage() {
             className="w-full bg-black/60 border border-white/10 rounded-md px-4 py-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
           />
           <input
+            id="register-email"
+            name="email"
             type="email"
+            autoComplete="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -53,7 +59,10 @@ export default function RegisterPage() {
             className="w-full bg-black/60 border border-white/10 rounded-md px-4 py-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
           />
           <input
+            id="register-password"
+            name="password"
             type="password"
+            autoComplete="new-password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

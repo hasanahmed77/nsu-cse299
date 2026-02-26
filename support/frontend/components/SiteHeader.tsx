@@ -127,6 +127,8 @@ export default function SiteHeader() {
                 <path d="M20 20L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
               <input
+                id="desktop-nav-search"
+                name="search"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Search titles..."
@@ -187,6 +189,8 @@ export default function SiteHeader() {
                   <path d="M20 20L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
                 <input
+                  id="mobile-nav-search"
+                  name="search"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
                   placeholder="Search titles..."

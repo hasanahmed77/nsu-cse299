@@ -8,7 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
 connect_args = {}
-db_url = settings.database_url
+is_serverless = os.getenv("VERCEL") == "1" or os.getenv("VERCEL_ENV") is not None
+db_url = settings.database_pool_url if (is_serverless and settings.database_pool_url) else settings.database_url
 
 # Normalize DB URL for SQLAlchemy asyncpg.
 if db_url.startswith("postgres://"):
@@ -35,7 +36,7 @@ if not ssl_verify:
 connect_args["ssl"] = ssl_context
 
 # Serverless environments should not keep open pools
-use_null_pool = os.getenv("VERCEL") == "1" or os.getenv("VERCEL_ENV") is not None
+use_null_pool = is_serverless
 engine = create_async_engine(
     db_url,
     pool_pre_ping=True,

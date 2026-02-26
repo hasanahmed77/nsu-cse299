@@ -1,5 +1,6 @@
 import os
 import re
+import traceback
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,6 +71,7 @@ async def cors_fallback_middleware(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception:
+        traceback.print_exc()
         response = JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
 
     if allowed and origin:

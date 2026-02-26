@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/netflix"
+    database_pool_url: str | None = None
 
     # CORS
     cors_origins: str = "http://localhost:3000"

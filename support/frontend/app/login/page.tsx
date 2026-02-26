@@ -40,7 +40,10 @@ export default function LoginPage() {
         <h1 className="text-3xl font-display tracking-wider">Sign In</h1>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <input
+            id="login-email"
+            name="email"
             type="email"
+            autoComplete="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -48,7 +51,10 @@ export default function LoginPage() {
             className="w-full bg-black/60 border border-white/10 rounded-md px-4 py-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
           />
           <input
+            id="login-password"
+            name="password"
             type="password"
+            autoComplete="current-password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

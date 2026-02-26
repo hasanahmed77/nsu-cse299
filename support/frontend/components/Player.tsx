@@ -302,6 +302,8 @@ export default function Player({
         }`}
       >
         <input
+          id="player-progress"
+          name="progress"
           type="range"
           min={0}
           max={Math.max(duration, 0)}
@@ -367,6 +369,8 @@ export default function Player({
               )}
             </button>
             <input
+              id="player-volume"
+              name="volume"
               type="range"
               min={0}
               max={1}
