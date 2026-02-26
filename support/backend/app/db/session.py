@@ -37,6 +37,10 @@ connect_args["ssl"] = ssl_context
 
 # Serverless environments should not keep open pools
 use_null_pool = is_serverless
+if is_serverless:
+    # Supabase transaction pooler + asyncpg prepared statements can conflict on Vercel.
+    connect_args["statement_cache_size"] = 0
+
 engine = create_async_engine(
     db_url,
     pool_pre_ping=True,
