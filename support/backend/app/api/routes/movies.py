@@ -1,4 +1,6 @@
 from datetime import datetime
+from difflib import SequenceMatcher
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
@@ -15,6 +17,42 @@ from app.schemas.movie import MovieOut, SubtitleOut
 from app.services.recommendations import recommend_for_movie
 
 router = APIRouter(prefix="/movies", tags=["movies"])
+
+
+def _normalize_text(value: str | None) -> str:
+    if not value:
+        return ""
+    return re.sub(r"[^a-z0-9\s]+", " ", value.lower()).strip()
+
+
+def _movie_search_score(movie: Movie, query: str, query_tokens: list[str]) -> float:
+    title = _normalize_text(movie.title)
+    description = _normalize_text(movie.description)
+    if not title:
+        return 0.0
+
+    score = 0.0
+
+    if title == query:
+        score += 100.0
+    elif title.startswith(query):
+        score += 90.0
+    elif query in title:
+        score += 75.0
+
+    if description and query in description:
+        score += 25.0
+
+    token_hits_title = sum(1 for token in query_tokens if token in title)
+    token_hits_desc = sum(1 for token in query_tokens if token in description)
+    score += token_hits_title * 8.0
+    score += token_hits_desc * 2.5
+
+    score += SequenceMatcher(None, query, title).ratio() * 45.0
+    if description:
+        score += SequenceMatcher(None, query, description[:220]).ratio() * 10.0
+
+    return score
 
 
 async def _hydrate_movie(db: AsyncSession, movie: Movie) -> MovieOut:
@@ -55,12 +93,37 @@ async def _hydrate_movie(db: AsyncSession, movie: Movie) -> MovieOut:
 async def list_movies(
     query: str | None = None, page: int = 1, limit: int = 24, db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Movie)
-    if query:
-        stmt = stmt.where(Movie.title.ilike(f"%{query}%"))
-    stmt = stmt.order_by(Movie.created_at.desc()).offset((page - 1) * limit).limit(limit)
-    result = await db.execute(stmt)
-    movies = result.scalars().all()
+    q = (query or "").strip()
+
+    if q:
+        normalized_query = _normalize_text(q)
+        query_tokens = [t for t in normalized_query.split() if t]
+        offset = max(page - 1, 0) * limit
+        candidate_count = max(180, offset + limit * 8)
+
+        candidates_result = await db.execute(
+            select(Movie).order_by(Movie.created_at.desc()).limit(candidate_count)
+        )
+        candidates = candidates_result.scalars().all()
+
+        ranked = []
+        for movie in candidates:
+            score = _movie_search_score(movie, normalized_query, query_tokens)
+            if score > 20.0:
+                ranked.append((score, movie))
+
+        ranked.sort(
+            key=lambda item: (
+                -item[0],
+                -(item[1].created_at.timestamp() if item[1].created_at else 0),
+            )
+        )
+        movies = [movie for _, movie in ranked[offset : offset + limit]]
+    else:
+        stmt = select(Movie).order_by(Movie.created_at.desc()).offset((page - 1) * limit).limit(limit)
+        result = await db.execute(stmt)
+        movies = result.scalars().all()
+
     return [await _hydrate_movie(db, m) for m in movies]
 
 
