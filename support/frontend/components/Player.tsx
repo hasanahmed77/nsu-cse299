@@ -257,7 +257,9 @@ export default function Player({
   return (
     <div
       ref={containerRef}
-      className="relative h-[100dvh] w-full overflow-hidden bg-black"
+      className={`relative h-[100dvh] w-full overflow-hidden bg-black ${
+        isPlaying && !showChrome ? "cursor-none" : "cursor-default"
+      }`}
       onMouseMove={handleUserActivity}
       onTouchStart={handleUserActivity}
       onClick={handleUserActivity}
