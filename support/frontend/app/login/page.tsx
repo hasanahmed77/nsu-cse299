@@ -4,7 +4,7 @@ import { useState } from "react";
 import { api } from "../../lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { invalidateAuthCache } from "../../lib/auth";
+import { invalidateAuthCache, setFrontendAccessToken } from "../../lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,10 +19,13 @@ export default function LoginPage() {
     setSubmitting(true);
     setMessage(null);
     try {
-      await api("/api/v1/auth/login", {
+      const payload = await api<{ access_token: string }>("/api/v1/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
+      if (payload?.access_token) {
+        setFrontendAccessToken(payload.access_token);
+      }
       invalidateAuthCache();
       window.dispatchEvent(new Event("auth-state-changed"));
       setMessage("Logged in.");

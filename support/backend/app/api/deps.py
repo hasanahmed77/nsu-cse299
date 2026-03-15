@@ -13,6 +13,10 @@ async def get_current_user(
 ) -> User:
     token = request.cookies.get("access_token")
     if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            token = auth_header.split(" ", 1)[1].strip()
+    if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])

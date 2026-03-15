@@ -2,18 +2,20 @@ import "./globals.css";
 import SiteHeader from "../components/SiteHeader";
 import RouteGuard from "../components/RouteGuard";
 import { Suspense } from "react";
+import { getServerUser } from "../lib/server-auth";
 
 export const metadata = {
   title: "TV",
   description: "A cinematic Apple TV-inspired portfolio app",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const initialUser = await getServerUser();
   return (
     <html lang="en">
       <body className="bg-black text-white">
         <Suspense fallback={<div className="h-[72px]" />}>
-          <SiteHeader />
+          <SiteHeader initialUser={initialUser} />
         </Suspense>
         <Suspense fallback={<div className="px-4 md:px-10 py-8" />}>
           <RouteGuard>

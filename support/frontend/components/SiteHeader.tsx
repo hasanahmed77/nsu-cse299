@@ -2,20 +2,31 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AuthNav from "./AuthNav";
 import { getCurrentUser } from "../lib/auth";
 
 type PlayerChromeEvent = CustomEvent<{ visible: boolean }>;
 
-export default function SiteHeader() {
+type HeaderUser = {
+  id: number;
+  email: string;
+  full_name?: string | null;
+};
+
+export default function SiteHeader({ initialUser }: { initialUser?: HeaderUser | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const onPlayerPage = pathname?.startsWith("/movies/") ?? false;
   const [playerChromeVisible, setPlayerChromeVisible] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const initialAuth = useRef<boolean | null>(
+    initialUser === undefined ? null : Boolean(initialUser)
+  );
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    initialAuth.current === null ? false : initialAuth.current
+  );
   const currentQuery = useMemo(() => (searchParams.get("q") || "").trim(), [searchParams]);
   const [searchValue, setSearchValue] = useState(currentQuery);
 
@@ -40,10 +51,18 @@ export default function SiteHeader() {
   }, [onPlayerPage]);
 
   useEffect(() => {
+    if (initialUser !== undefined) return;
     let cancelled = false;
     getCurrentUser().then((u) => {
       if (!cancelled) setIsAuthenticated(Boolean(u));
     });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialUser]);
+
+  useEffect(() => {
+    let cancelled = false;
     const onAuthChanged = () => {
       getCurrentUser(true).then((u) => {
         if (!cancelled) setIsAuthenticated(Boolean(u));
@@ -147,7 +166,7 @@ export default function SiteHeader() {
             </div>
           ) : null}
           <div className="hidden md:block">
-            <AuthNav />
+            <AuthNav initialUser={initialUser ?? null} />
           </div>
           <button
             type="button"
@@ -208,7 +227,7 @@ export default function SiteHeader() {
                 ) : null}
               </div>
             ) : null}
-            <AuthNav mobile onNavigate={() => setMobileMenuOpen(false)} />
+            <AuthNav mobile onNavigate={() => setMobileMenuOpen(false)} initialUser={initialUser ?? null} />
           </div>
         </div>
       ) : null}

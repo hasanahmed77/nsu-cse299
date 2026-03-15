@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../lib/api";
-import { useEffect, useState } from "react";
-import { invalidateAuthCache } from "../lib/auth";
+import { useEffect, useRef, useState } from "react";
+import { clearFrontendAccessToken, getCurrentUser, invalidateAuthCache } from "../lib/auth";
 
 type User = {
   id: number;
@@ -15,30 +15,27 @@ type User = {
 type AuthNavProps = {
   mobile?: boolean;
   onNavigate?: () => void;
+  initialUser?: User | null;
 };
 
 let authUserCache: User | null | undefined = undefined;
 let authUserRequest: Promise<User | null> | null = null;
 
-async function fetchCurrentUser(): Promise<User | null> {
-  const res = await fetch(`${API_BASE}/api/v1/auth/me`, {
-    credentials: "include",
-  });
-  if (res.status === 401) return null;
-  if (!res.ok) throw new Error("Failed to load auth state");
-  return res.json();
-}
-
-export default function AuthNav({ mobile = false, onNavigate }: AuthNavProps) {
+export default function AuthNav({ mobile = false, onNavigate, initialUser }: AuthNavProps) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(authUserCache ?? null);
-  const [loading, setLoading] = useState(authUserCache === undefined);
+  const [user, setUser] = useState<User | null>(initialUser ?? authUserCache ?? null);
+  const [loading, setLoading] = useState(false);
+  const seededRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     const syncAuth = async () => {
+      if (!seededRef.current && initialUser !== undefined) {
+        authUserCache = initialUser;
+        seededRef.current = true;
+      }
       if (!authUserRequest) {
-        authUserRequest = fetchCurrentUser();
+        authUserRequest = getCurrentUser();
       }
 
       authUserRequest
@@ -77,6 +74,7 @@ export default function AuthNav({ mobile = false, onNavigate }: AuthNavProps) {
       credentials: "include",
       headers: { "Content-Type": "application/json" },
     });
+    clearFrontendAccessToken();
     authUserCache = null;
     authUserRequest = null;
     invalidateAuthCache();
@@ -98,9 +96,7 @@ export default function AuthNav({ mobile = false, onNavigate }: AuthNavProps) {
       >
         Home
       </Link>
-      {loading ? (
-        <span className={`text-zinc-500 ${mobile ? "px-3 py-2" : ""}`}>Auth...</span>
-      ) : user ? (
+      {user ? (
         <>
           <Link
             className={`hover:text-white ${mobile ? "px-3 py-2 rounded-md border border-white/10" : ""}`}
