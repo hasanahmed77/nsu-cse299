@@ -8,15 +8,16 @@ export type ServerAuthUser = {
 };
 
 export async function getServerUser(): Promise<ServerAuthUser | null> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   let cookieHeader = "";
   let accessToken: string | null = null;
-  if (typeof (cookieStore as { getAll?: () => { name: string; value: string }[] }).getAll === "function") {
-    const all = (cookieStore as { getAll: () => { name: string; value: string }[] }).getAll();
+  const cookieStoreAny = cookieStore as unknown;
+  if (typeof (cookieStoreAny as { getAll?: () => { name: string; value: string }[] }).getAll === "function") {
+    const all = (cookieStoreAny as { getAll: () => { name: string; value: string }[] }).getAll();
     cookieHeader = all.map((c) => `${c.name}=${c.value}`).join("; ");
     accessToken = all.find((c) => c.name === "access_token")?.value ?? null;
-  } else if (typeof (cookieStore as { toString?: () => string }).toString === "function") {
-    cookieHeader = (cookieStore as { toString: () => string }).toString();
+  } else if (typeof (cookieStoreAny as { toString?: () => string }).toString === "function") {
+    cookieHeader = (cookieStoreAny as { toString: () => string }).toString();
     const match = cookieHeader.match(/(?:^|;\s*)access_token=([^;]+)/);
     accessToken = match ? decodeURIComponent(match[1]) : null;
   }
