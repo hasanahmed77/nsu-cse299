@@ -44,24 +44,34 @@ export default function Home() {
   );
 
   if (searchError) {
-    return <div className="text-secondary px-4 md:px-10">Failed to search.</div>;
+    return (
+      <div className="px-4 py-6 md:px-10">
+        <div className="status-panel">
+          <h1 className="status-title">Search is unavailable</h1>
+          <p className="status-copy">The catalog could not be searched right now. Refresh and try again.</p>
+        </div>
+      </div>
+    );
   }
   if (query) {
     if (!searchResults) {
       return (
         <div className="px-4 md:px-10 py-6 space-y-4">
-          <div className="h-7 w-64 rounded bg-zinc-800/80 animate-pulse" />
+          <div className="skeleton-shimmer h-7 w-64 rounded-full" />
           <SearchResultsSkeleton />
         </div>
       );
     }
     return (
       <div className="px-4 md:px-10 py-6 space-y-4">
-        <h1 className="text-xl md:text-2xl font-semibold">Search Results for "{query}"</h1>
+        <h1 className="section-title">Search Results for "{query}"</h1>
         {searchResults.length === 0 ? (
-          <div className="text-zinc-400">No titles found.</div>
+          <div className="status-panel">
+            <h2 className="status-title">No titles found</h2>
+            <p className="status-copy">Try another spelling, a shorter keyword, or a related franchise name.</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
             {searchResults.map((movie) => (
               <MovieCard
                 key={movie.id}
@@ -79,7 +89,14 @@ export default function Home() {
   }
 
   if (latestError || allMoviesError) {
-    return <div className="text-secondary">Failed to load.</div>;
+    return (
+      <div className="px-4 py-6 md:px-10">
+        <div className="status-panel">
+          <h1 className="status-title">We could not load the catalog</h1>
+          <p className="status-copy">The homepage data failed to load. Refresh the page and try again.</p>
+        </div>
+      </div>
+    );
   }
 
   if (!latest || !trending || !allMovies) {
@@ -110,13 +127,13 @@ export default function Home() {
           <div className="flex flex-wrap gap-3">
             <a
               href={hero ? `/movies/${hero.id}` : "#"}
-              className="bg-white text-black font-semibold px-6 py-2.5 rounded-md"
+              className="rounded-md bg-white px-6 py-2.5 font-semibold text-black hover:scale-[1.02] hover:bg-zinc-100"
             >
               Play
             </a>
             <a
               href={hero ? `/more-info/${hero.id}` : "#"}
-              className="bg-white/20 text-white px-6 py-2.5 rounded-md"
+              className="rounded-md bg-white/20 px-6 py-2.5 text-white hover:scale-[1.02] hover:bg-white/25"
             >
               More Info
             </a>

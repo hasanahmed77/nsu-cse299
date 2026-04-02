@@ -24,7 +24,6 @@ let authUserRequest: Promise<User | null> | null = null;
 export default function AuthNav({ mobile = false, onNavigate, initialUser }: AuthNavProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(initialUser ?? authUserCache ?? null);
-  const [loading, setLoading] = useState(false);
   const seededRef = useRef(false);
 
   useEffect(() => {
@@ -49,7 +48,6 @@ export default function AuthNav({ mobile = false, onNavigate, initialUser }: Aut
         })
         .finally(() => {
           authUserRequest = null;
-          if (!cancelled) setLoading(false);
         });
     };
 
@@ -90,7 +88,7 @@ export default function AuthNav({ mobile = false, onNavigate, initialUser }: Aut
       className={`text-zinc-300 ${mobile ? "flex flex-col items-stretch gap-2 text-sm" : "flex items-center gap-3 md:gap-6 text-xs md:text-sm"}`}
     >
       <Link
-        className={`hover:text-white ${mobile ? "px-3 py-2 rounded-md border border-white/10" : "hidden sm:inline"}`}
+        className={`hover:text-white focus-visible:text-white ${mobile ? "rounded-xl border border-white/10 px-3 py-2" : "hidden sm:inline"}`}
         href="/"
         onClick={onNavigate}
       >
@@ -99,14 +97,14 @@ export default function AuthNav({ mobile = false, onNavigate, initialUser }: Aut
       {user ? (
         <>
           <Link
-            className={`hover:text-white ${mobile ? "px-3 py-2 rounded-md border border-white/10" : ""}`}
+            className={`hover:text-white focus-visible:text-white ${mobile ? "rounded-xl border border-white/10 px-3 py-2" : ""}`}
             href="/history"
             onClick={onNavigate}
           >
             History
           </Link>
           <button
-            className={`border border-white/70 text-white hover:border-white px-3 py-1.5 font-medium ${mobile ? "rounded-md text-left" : "rounded-full"}`}
+            className={`border border-white/70 px-3 py-1.5 font-medium text-white hover:-translate-y-0.5 hover:border-white hover:bg-white/5 ${mobile ? "rounded-xl text-left" : "rounded-full"}`}
             onClick={handleLogout}
             type="button"
           >
@@ -116,14 +114,14 @@ export default function AuthNav({ mobile = false, onNavigate, initialUser }: Aut
       ) : (
         <>
           <Link
-            className={`border border-white/70 hover:border-white text-white px-3 py-1.5 font-medium ${mobile ? "rounded-md" : "rounded-full"}`}
+            className={`border border-white/70 px-3 py-1.5 font-medium text-white hover:-translate-y-0.5 hover:border-white hover:bg-white/5 ${mobile ? "rounded-xl" : "rounded-full"}`}
             href="/login"
             onClick={onNavigate}
           >
             Login
           </Link>
           <Link
-            className={`border border-white/70 hover:border-white text-white px-3 py-1.5 font-medium bg-white/10 ${mobile ? "rounded-md" : "rounded-full"}`}
+            className={`border border-white/70 bg-white/10 px-3 py-1.5 font-medium text-white hover:-translate-y-0.5 hover:border-white hover:bg-white/15 ${mobile ? "rounded-xl" : "rounded-full"}`}
             href="/register"
             onClick={onNavigate}
           >

@@ -22,6 +22,23 @@ body {
   min-height: 100vh;
 }
 
+a,
+button,
+input {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    opacity 180ms ease;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(15, 15, 15, 0.9), 0 0 0 4px rgba(250, 204, 21, 0.7);
+}
+
 .font-display {
   font-family: var(--font-display), ui-sans-serif, system-ui;
 }
@@ -58,6 +75,63 @@ body {
   box-shadow: inset 0 -120px 120px rgba(0, 0, 0, 0.85);
 }
 
+.section-title {
+  font-size: clamp(1.1rem, 1rem + 0.7vw, 1.7rem);
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  font-weight: 650;
+}
+
+.meta-text {
+  font-size: 0.72rem;
+  line-height: 1.1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(228, 228, 231, 0.72);
+}
+
+.surface-panel {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0.96), rgba(10, 10, 10, 0.92));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+.status-panel {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0.95), rgba(8, 8, 8, 0.9));
+  padding: 1.25rem;
+}
+
+.status-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fafafa;
+}
+
+.status-copy {
+  margin-top: 0.45rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: rgba(228, 228, 231, 0.72);
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(37, 37, 40, 0.9), rgba(24, 24, 27, 0.85));
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 50%, transparent 100%);
+  animation: skeleton-sweep 1.5s ease-in-out infinite;
+}
+
 .gmail-loader-track {
   position: relative;
   width: 100%;
@@ -87,5 +161,11 @@ body {
   }
   100% {
     transform: translateX(220%);
+  }
+}
+
+@keyframes skeleton-sweep {
+  100% {
+    transform: translateX(100%);
   }
 }

@@ -24,34 +24,51 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-950 border border-white/10 p-4 rounded-lg">
+      <div className="surface-panel p-4">
         <input
           id="search-page-query"
           name="query"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search movies..."
-          className="w-full bg-black/60 border border-white/10 rounded-md px-4 py-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/30"
+          className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-3 text-sm placeholder:text-zinc-500 focus:outline-none"
         />
       </div>
 
-      {error && <div className="text-secondary">Failed to search.</div>}
-      {!query && <div className="text-zinc-500">Type to search.</div>}
+      {error ? (
+        <div className="status-panel">
+          <h2 className="status-title">Search failed</h2>
+          <p className="status-copy">We could not load results right now. Try again in a moment.</p>
+        </div>
+      ) : null}
+      {!query ? (
+        <div className="status-panel">
+          <h2 className="status-title">Search the catalog</h2>
+          <p className="status-copy">Type a title, franchise, or close match to browse relevant movies instantly.</p>
+        </div>
+      ) : null}
       {query && !data && !error && <SearchResultsSkeleton />}
 
       {data && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {data.map((movie: any) => (
-            <MovieCard
-              key={movie.id}
-              id={movie.id}
-              title={movie.title}
-              posterUrl={movie.poster_url}
-              year={movie.year}
-              maturityRating={movie.maturity_rating}
-            />
-          ))}
-        </div>
+        data.length === 0 ? (
+          <div className="status-panel">
+            <h2 className="status-title">No matching titles</h2>
+            <p className="status-copy">Try a shorter title, a character name, or a slightly different spelling.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+            {data.map((movie: any) => (
+              <MovieCard
+                key={movie.id}
+                id={movie.id}
+                title={movie.title}
+                posterUrl={movie.poster_url}
+                year={movie.year}
+                maturityRating={movie.maturity_rating}
+              />
+            ))}
+          </div>
+        )
       )}
     </div>
   );
