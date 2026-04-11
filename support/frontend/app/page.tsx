@@ -22,6 +22,13 @@ type Movie = {
   subtitles?: { label: string; language: string; url: string }[];
 };
 
+type HistoryItem = {
+  movie_id: number;
+  movie_title?: string | null;
+  progress_seconds: number;
+  completed: boolean;
+};
+
 const fetcher: (url: string) => Promise<Movie[]> = (url) => api<Movie[]>(url);
 
 export default function Home() {
@@ -41,6 +48,10 @@ export default function Home() {
   const { data: allMovies, error: allMoviesError } = useSWR<Movie[]>(
     query ? null : "/api/v1/movies?page=1&limit=500",
     fetcher
+  );
+  const { data: history } = useSWR<HistoryItem[] | null>(
+    query ? null : "/api/v1/history",
+    (url: string) => api<HistoryItem[]>(url).catch(() => null)
   );
 
   if (searchError) {
@@ -65,6 +76,9 @@ export default function Home() {
     return (
       <div className="px-4 md:px-10 py-6 space-y-4">
         <h1 className="section-title">Search Results for "{query}"</h1>
+        <p className="meta-text">
+          {searchResults.length} {searchResults.length === 1 ? "title" : "titles"} found
+        </p>
         {searchResults.length === 0 ? (
           <div className="status-panel">
             <h2 className="status-title">No titles found</h2>
@@ -105,6 +119,18 @@ export default function Home() {
 
   const hero = latest[0] || trending[0];
   const excludedIds = new Set([...trending.map((m) => m.id), ...latest.map((m) => m.id)]);
+  const historyByMovieId = new Map((history || []).map((item) => [item.movie_id, item]));
+  const continueWatching = allMovies.filter((movie) => {
+    const entry = historyByMovieId.get(movie.id);
+    return Boolean(entry && !entry.completed && entry.progress_seconds > 0);
+  });
+  continueWatching.sort((a, b) => {
+    const aProgress = historyByMovieId.get(a.id)?.progress_seconds ?? 0;
+    const bProgress = historyByMovieId.get(b.id)?.progress_seconds ?? 0;
+    return bProgress - aProgress;
+  });
+  const continueWatchingTop = continueWatching.slice(0, 10);
+  continueWatchingTop.forEach((movie) => excludedIds.add(movie.id));
   const allOtherMovies = allMovies.filter((movie) => !excludedIds.has(movie.id));
 
   return (
@@ -141,6 +167,7 @@ export default function Home() {
         </div>
       </section>
 
+      {continueWatchingTop.length > 0 && <Row title="Continue Watching" movies={continueWatchingTop} />}
       {trending && trending.length > 0 && <Row title="Trending Now" movies={trending} showRank />}
       {latest && latest.length > 0 && <Row title="Latest Releases" movies={latest} />}
       {allOtherMovies.length > 0 && <Row title="More to Explore" movies={allOtherMovies} />}

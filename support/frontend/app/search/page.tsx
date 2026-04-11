@@ -56,17 +56,22 @@ export default function SearchPage() {
             <p className="status-copy">Try a shorter title, a character name, or a slightly different spelling.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
-            {data.map((movie: any) => (
-              <MovieCard
-                key={movie.id}
-                id={movie.id}
-                title={movie.title}
-                posterUrl={movie.poster_url}
-                year={movie.year}
-                maturityRating={movie.maturity_rating}
-              />
-            ))}
+          <div className="space-y-4">
+            <p className="meta-text">
+              {data.length} {data.length === 1 ? "title" : "titles"} found
+            </p>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+              {data.map((movie: any) => (
+                <MovieCard
+                  key={movie.id}
+                  id={movie.id}
+                  title={movie.title}
+                  posterUrl={movie.poster_url}
+                  year={movie.year}
+                  maturityRating={movie.maturity_rating}
+                />
+              ))}
+            </div>
           </div>
         )
       )}

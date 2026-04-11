@@ -38,10 +38,12 @@ export default function Player({
   const [currentTime, setCurrentTime] = useState(0);
   const [showChrome, setShowChrome] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    setIsBuffering(true);
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = src;
@@ -94,6 +96,8 @@ export default function Player({
       setIsMuted(video.muted);
       setVolume(video.volume);
     };
+    const onCanPlay = () => setIsBuffering(false);
+    const onWaiting = () => setIsBuffering(true);
 
     const onEnded = () => {
       if (completedRef.current) return;
@@ -102,7 +106,10 @@ export default function Player({
       void pushHistory(Math.floor(video.duration || video.currentTime || 0), true);
     };
 
-    const onPlay = () => setIsPlaying(true);
+    const onPlay = () => {
+      setIsPlaying(true);
+      setIsBuffering(false);
+    };
     const onPause = () => setIsPlaying(false);
     const onVolumeChange = () => {
       setIsMuted(video.muted);
@@ -110,6 +117,9 @@ export default function Player({
     };
 
     video.addEventListener("loadedmetadata", onLoadedMetadata);
+    video.addEventListener("canplay", onCanPlay);
+    video.addEventListener("playing", onCanPlay);
+    video.addEventListener("waiting", onWaiting);
     video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("ended", onEnded);
     video.addEventListener("play", onPlay);
@@ -118,6 +128,9 @@ export default function Player({
 
     return () => {
       video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      video.removeEventListener("canplay", onCanPlay);
+      video.removeEventListener("playing", onCanPlay);
+      video.removeEventListener("waiting", onWaiting);
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("ended", onEnded);
       video.removeEventListener("play", onPlay);
@@ -287,6 +300,14 @@ export default function Player({
         }}
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/55" />
+      {isBuffering ? (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-black/55 px-4 py-3 backdrop-blur-sm">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+            <span className="text-sm text-zinc-100">Loading stream</span>
+          </div>
+        </div>
+      ) : null}
 
       <div
         className={`absolute left-4 bottom-28 z-20 max-w-xl md:left-8 md:bottom-36 transition-opacity duration-300 ${
