@@ -19,6 +19,8 @@ export default function SiteHeader({ initialUser }: { initialUser?: HeaderUser |
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const onPlayerPage = pathname?.startsWith("/movies/") ?? false;
+  const onAuthPage = pathname === "/login" || pathname === "/register";
+  const showSearch = !onPlayerPage && !onAuthPage;
   const [playerChromeVisible, setPlayerChromeVisible] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const initialAuth = useRef<boolean | null>(
@@ -133,7 +135,7 @@ export default function SiteHeader({ initialUser }: { initialUser?: HeaderUser |
           <span>TV</span>
         </Link>
         <div className="flex items-center gap-3 md:gap-5">
-          {!onPlayerPage && isAuthenticated ? (
+          {showSearch ? (
             <div className="relative hidden md:block">
               <svg
                 viewBox="0 0 24 24"
@@ -195,7 +197,7 @@ export default function SiteHeader({ initialUser }: { initialUser?: HeaderUser |
       {mobileMenuOpen ? (
         <div className="md:hidden px-4 pb-4">
           <div className="rounded-lg border border-white/15 bg-black/80 backdrop-blur-sm p-3 space-y-3">
-            {!onPlayerPage && isAuthenticated ? (
+            {showSearch ? (
               <div className="relative">
                 <svg
                   viewBox="0 0 24 24"

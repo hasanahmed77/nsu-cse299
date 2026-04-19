@@ -13,6 +13,14 @@ function formatTime(seconds: number) {
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
+function isHlsSource(src: string) {
+  try {
+    return new URL(src).pathname.toLowerCase().endsWith(".m3u8");
+  } catch {
+    return src.toLowerCase().split("?")[0].endsWith(".m3u8");
+  }
+}
+
 export default function Player({
   src,
   subtitles,
@@ -38,24 +46,65 @@ export default function Player({
   const [currentTime, setCurrentTime] = useState(0);
   const [showChrome, setShowChrome] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(true);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [hasStreamReady, setHasStreamReady] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
     setIsBuffering(true);
+    setHasStreamReady(false);
+    setStreamError(null);
+    video.removeAttribute("src");
+    video.load();
+
+    if (!src) {
+      setIsBuffering(false);
+      setStreamError("No stream URL is available for this movie.");
+      return;
+    }
+
+    const hlsSource = isHlsSource(src);
+
+    if (!hlsSource) {
+      video.src = src;
+      video.load();
+      return;
+    }
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = src;
+      video.load();
       return;
     }
 
     if (Hls.isSupported()) {
-      const hls = new Hls();
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
+      });
       hls.loadSource(src);
       hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setHasStreamReady(true);
+        setIsBuffering(false);
+      });
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (!data.fatal) return;
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          hls.startLoad();
+          return;
+        }
+        setIsBuffering(false);
+        setStreamError("This stream could not be loaded. Please check the video URL or storage permissions.");
+      });
       return () => hls.destroy();
     }
+
+    setIsBuffering(false);
+    setStreamError("This browser does not support the stream format.");
   }, [src]);
 
   useEffect(() => {
@@ -90,14 +139,29 @@ export default function Player({
       }
     };
 
+    const markStreamReady = () => {
+      setHasStreamReady(true);
+      setIsBuffering(false);
+      setStreamError(null);
+    };
+
     const onLoadedMetadata = () => {
       setDuration(video.duration || 0);
       setCurrentTime(video.currentTime || 0);
       setIsMuted(video.muted);
       setVolume(video.volume);
+      markStreamReady();
     };
-    const onCanPlay = () => setIsBuffering(false);
-    const onWaiting = () => setIsBuffering(true);
+    const onCanPlay = () => markStreamReady();
+    const onWaiting = () => {
+      if (!video.paused && video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
+        setIsBuffering(true);
+      }
+    };
+    const onError = () => {
+      setIsBuffering(false);
+      setStreamError("This stream could not be loaded. Please check the video URL or storage permissions.");
+    };
 
     const onEnded = () => {
       if (completedRef.current) return;
@@ -108,7 +172,9 @@ export default function Player({
 
     const onPlay = () => {
       setIsPlaying(true);
-      setIsBuffering(false);
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        markStreamReady();
+      }
     };
     const onPause = () => setIsPlaying(false);
     const onVolumeChange = () => {
@@ -117,20 +183,33 @@ export default function Player({
     };
 
     video.addEventListener("loadedmetadata", onLoadedMetadata);
+    video.addEventListener("loadeddata", onCanPlay);
     video.addEventListener("canplay", onCanPlay);
+    video.addEventListener("canplaythrough", onCanPlay);
     video.addEventListener("playing", onCanPlay);
     video.addEventListener("waiting", onWaiting);
+    video.addEventListener("error", onError);
     video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("ended", onEnded);
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
     video.addEventListener("volumechange", onVolumeChange);
 
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      onLoadedMetadata();
+    }
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      onCanPlay();
+    }
+
     return () => {
       video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      video.removeEventListener("loadeddata", onCanPlay);
       video.removeEventListener("canplay", onCanPlay);
+      video.removeEventListener("canplaythrough", onCanPlay);
       video.removeEventListener("playing", onCanPlay);
       video.removeEventListener("waiting", onWaiting);
+      video.removeEventListener("error", onError);
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("ended", onEnded);
       video.removeEventListener("play", onPlay);
@@ -300,7 +379,26 @@ export default function Player({
         }}
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/55" />
-      {isBuffering ? (
+      {streamError ? (
+        <div className="absolute inset-0 z-20 flex items-center justify-center px-4">
+          <div className="max-w-md rounded-2xl border border-red-400/30 bg-black/75 p-5 text-center shadow-2xl backdrop-blur-md">
+            <p className="text-sm font-semibold text-red-200">Stream unavailable</p>
+            <p className="mt-2 text-sm text-zinc-200">{streamError}</p>
+            <button
+              type="button"
+              onClick={() => {
+                const video = videoRef.current;
+                setStreamError(null);
+                setIsBuffering(true);
+                video?.load();
+              }}
+              className="mt-4 rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : isBuffering && !hasStreamReady ? (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
           <div className="flex items-center gap-3 rounded-full border border-white/10 bg-black/55 px-4 py-3 backdrop-blur-sm">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
